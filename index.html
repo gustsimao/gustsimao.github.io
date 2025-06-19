@@ -87,6 +87,11 @@ async function exportarCSV() {
     return;
   }
 
+  if (!data || data.length === 0) {
+    alert('Nenhum dado para exportar.');
+    return;
+  }
+
   let csv = "Data,Sistólica,Diastólica\n";
   data.forEach(d => {
     const dataFormatada = new Date(d.data).toLocaleString('pt-BR');
