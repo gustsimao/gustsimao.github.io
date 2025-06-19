@@ -73,6 +73,40 @@
         return;
       }
 
+      async function exportarCSV() {
+  const { data, error } = await supabaseClient
+    .from('pressao')
+    .select('*')
+    .order('data', { ascending: true });
+
+  if (error) {
+    alert('Erro ao buscar dados para exportar');
+    console.error(error);
+    return;
+  }
+
+  // Monta o cabeçalho
+  let csv = "Data,Sistólica,Diastólica\n";
+
+  // Adiciona os dados
+  data.forEach(d => {
+    const dataFormatada = new Date(d.data).toLocaleString('pt-BR');
+    csv += `${dataFormatada},${d.sistolica},${d.diastolica}\n`;
+  });
+
+  // Cria um blob e link para download
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "pressao_arterial.csv");
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+
       chart.data.labels = data.map(d => new Date(d.data).toLocaleString('pt-BR'));
       chart.data.datasets[0].data = data.map(d => d.sistolica);
       chart.data.datasets[1].data = data.map(d => d.diastolica);
