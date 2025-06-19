@@ -8,17 +8,17 @@
   <style>
     body { font-family: Arial; margin: 30px; background: #f4f4f4; }
     input, button { padding: 10px; font-size: 16px; }
-    canvas { margin-top: 30px; }
+    canvas { margin-top: 30px; background: white; padding: 20px; }
   </style>
 </head>
 <body>
-  <h2>Registrar Pressão Arterial (com banco de dados online)</h2>
+  <h2>Registrar Pressão Arterial</h2>
   <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
   <button onclick="registrarPressao()">Registrar</button>
   <canvas id="graficoPressao" width="800" height="400"></canvas>
 
   <script>
-    // 🔐 Substitua com os dados do seu projeto Supabase:
+    // 🔐 Substitua com os dados reais do seu projeto Supabase:
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
 
@@ -33,21 +33,30 @@
           {
             label: 'Sistólica (vermelho)',
             borderColor: 'red',
+            backgroundColor: 'rgba(255,0,0,0.1)',
             data: [],
             tension: 0.3
           },
           {
             label: 'Diastólica (verde)',
             borderColor: 'green',
+            backgroundColor: 'rgba(0,255,0,0.1)',
             data: [],
             tension: 0.3
           }
         ]
       },
       options: {
+        responsive: true,
         scales: {
-          y: { title: { display: true, text: 'Pressão (mmHg)' } },
-          x: { title: { display: true, text: 'Data/Hora' } }
+          y: {
+            title: { display: true, text: 'Pressão (mmHg)' },
+            suggestedMin: 60,
+            suggestedMax: 180
+          },
+          x: {
+            title: { display: true, text: 'Data/Hora' }
+          }
         }
       }
     });
@@ -71,7 +80,7 @@
     }
 
     async function registrarPressao() {
-      const input = document.getElementById('pressaoInput').value;
+      const input = document.getElementById('pressaoInput').value.trim();
       const partes = input.split('/');
       if (partes.length !== 2) {
         alert('Formato inválido. Use 130/80.');
@@ -86,12 +95,14 @@
         return;
       }
 
-      const { error } = await supabaseClient.from('pressao').insert([
-        { data: new Date().toISOString(), sistolica, diastolica }
-      ]);
+      const { error } = await supabaseClient
+        .from('pressao')
+        .insert([
+          { data: new Date().toISOString(), sistolica, diastolica }
+        ]);
 
       if (error) {
-        alert('Erro ao salvar!');
+        alert('Erro ao salvar%');
         console.error(error);
         return;
       }
@@ -100,6 +111,7 @@
       await carregarDados();
     }
 
+    // Carrega os dados ao iniciar a página
     carregarDados();
   </script>
 </body>
