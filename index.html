@@ -6,46 +6,30 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    body { font-family: Arial; margin: 30px; background: #f4f4f4; }
-    input, button { padding: 10px; font-size: 16px; margin: 5px 10px 5px 0; }
-    canvas { margin-top: 30px; background: #fff; padding: 20px; display: none; }
-    #loginDiv, #appDiv { margin-top: 20px; }
-    #appDiv { display: none; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background: #f4f4f4;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    canvas {
+      margin-top: 30px;
+      background: #fff;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
-
-  <h2>Login</h2>
-  <div id="loginDiv">
-    <input type="password" id="senhaInput" placeholder="Digite a senha">
-    <button onclick="verificarSenha()">Entrar</button>
-  </div>
-
-  <div id="appDiv">
-    <h2>Registrar Pressão Arterial</h2>
-    <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
-    <button onclick="registrarPressao()">Registrar</button>
-    <button onclick="exportarCSV()">Exportar CSV</button>
-    <canvas id="graficoPressao" width="800" height="400"></canvas>
-  </div>
+  <h2>Registrar Pressão Arterial</h2>
+  <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
+  <button onclick="registrarPressao()">Registrar</button>
+  <canvas id="graficoPressao" width="800" height="400"></canvas>
 
   <script>
-    // 🔐 Defina aqui sua senha
-    const SENHA_CORRETA = "1234";
-
-    function verificarSenha() {
-      const senha = document.getElementById("senhaInput").value;
-      if (senha === SENHA_CORRETA) {
-        document.getElementById("loginDiv").style.display = "none";
-        document.getElementById("appDiv").style.display = "block";
-        document.getElementById("graficoPressao").style.display = "block";
-        carregarDados();
-      } else {
-        alert("Senha incorreta!");
-      }
-    }
-
-    // Supabase
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
 
@@ -138,6 +122,7 @@
       await carregarDados();
     }
 
+    // Exportação como função global
     window.exportarCSV = async function () {
       const { data, error } = await supabaseClient
         .from('pressao')
@@ -171,6 +156,8 @@
       link.click();
       document.body.removeChild(link);
     };
+
+    carregarDados();
   </script>
 </body>
 </html>
