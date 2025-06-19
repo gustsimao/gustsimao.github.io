@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Pressão Arterial</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial; margin: 30px; background: #f4f4f4; }
+    input, button { padding: 10px; font-size: 16px; }
+    canvas { margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <h2>Registrar Pressão Arterial (com banco de dados online)</h2>
+  <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
+  <button onclick="registrarPressao()">Registrar</button>
+  <canvas id="graficoPressao" width="800" height="400"></canvas>
+
+  <script>
+    // 🔐 Substitua com os dados do seu projeto Supabase:
+    const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const ctx = document.getElementById('graficoPressao').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Sistólica (vermelho)',
+            borderColor: 'red',
+            data: [],
+            tension: 0.3
+          },
+          {
+            label: 'Diastólica (verde)',
+            borderColor: 'green',
+            data: [],
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: { title: { display: true, text: 'Pressão (mmHg)' } },
+          x: { title: { display: true, text: 'Data/Hora' } }
+        }
+      }
+    });
+
+    async function carregarDados() {
+      const { data, error } = await supabase
+        .from('pressao')
+        .select('*')
+        .order('data', { ascending: true });
+
+      if (error) {
+        alert('Erro ao carregar dados');
+        console.error(error);
+        return;
+      }
+
+      chart.data.labels = data.map(d => new Date(d.data).toLocaleString('pt-BR'));
+      chart.data.datasets[0].data = data.map(d => d.sistolica);
+      chart.data.datasets[1].data = data.map(d => d.diastolica);
+      chart.update();
+    }
+
+    async function registrarPressao() {
+      const input = document.getElementById('pressaoInput').value;
+      const partes = input.split('/');
+      if (partes.length !== 2) {
+        alert('Formato inválido. Use 130/80.');
+        return;
+      }
+
+      const sistolica = parseInt(partes[0]);
+      const diastolica = parseInt(partes[1]);
+
+      if (isNaN(sistolica) || isNaN(diastolica)) {
+        alert('Valores inválidos.');
+        return;
+      }
+
+      const { error } = await supabase.from('pressao').insert([
+        { data: new Date().toISOString(), sistolica, diastolica }
+      ]);
+
+      if (error) {
+        alert('Erro ao salvar');
+        console.error(error);
+        return;
+      }
+
+      document.getElementById('pressaoInput').value = '';
+      await carregarDados();
+    }
+
+    // Ao carregar a página
+    carregarDados();
+  </script>
+</body>
+</html>
