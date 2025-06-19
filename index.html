@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: Arial; margin: 30px; background: #f4f4f4; }
-    input, button { padding: 10px; font-size: 16px; }
+    input, button { padding: 10px; font-size: 16px; margin-right: 10px; }
     canvas { margin-top: 30px; background: white; padding: 20px; }
   </style>
 </head>
@@ -16,11 +16,10 @@
   <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
   <button onclick="registrarPressao()">Registrar</button>
   <button onclick="exportarCSV()">Exportar CSV</button>
-
   <canvas id="graficoPressao" width="800" height="400"></canvas>
 
   <script>
-    // 🔐 Substitua com os dados reais do seu projeto Supabase:
+    // 🔐 Substitua com os dados reais do seu Supabase
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
 
@@ -74,44 +73,6 @@
         console.error(error);
         return;
       }
-      
-async function exportarCSV() {
-  const { data, error } = await supabaseClient
-    .from('pressao')
-    .select('*')
-    .order('data', { ascending: true });
-
-  if (error) {
-    alert('Erro ao buscar dados para exportar');
-    console.error(error);
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    alert('Nenhum dado para exportar.');
-    return;
-  }
-
-  let csv = "Data,Sistólica,Diastólica\n";
-  data.forEach(d => {
-    const dataFormatada = new Date(d.data).toLocaleString('pt-BR');
-    csv += `${dataFormatada},${d.sistolica},${d.diastolica}\n`;
-  });
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", "pressao_arterial.csv");
-  link.style.display = "none";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-
-      
-
 
       chart.data.labels = data.map(d => new Date(d.data).toLocaleString('pt-BR'));
       chart.data.datasets[0].data = data.map(d => d.sistolica);
@@ -142,7 +103,7 @@ async function exportarCSV() {
         ]);
 
       if (error) {
-        alert('Erro ao salvar%');
+        alert('Erro ao salvar');
         console.error(error);
         return;
       }
@@ -151,7 +112,40 @@ async function exportarCSV() {
       await carregarDados();
     }
 
-    // Carrega os dados ao iniciar a página
+    async function exportarCSV() {
+      const { data, error } = await supabaseClient
+        .from('pressao')
+        .select('*')
+        .order('data', { ascending: true });
+
+      if (error) {
+        alert('Erro ao buscar dados para exportar');
+        console.error(error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        alert('Nenhum dado para exportar.');
+        return;
+      }
+
+      let csv = "Data,Sistólica,Diastólica\n";
+      data.forEach(d => {
+        const dataFormatada = new Date(d.data).toLocaleString('pt-BR');
+        csv += `${dataFormatada},${d.sistolica},${d.diastolica}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "pressao_arterial.csv");
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     carregarDados();
   </script>
 </body>
