@@ -6,9 +6,21 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    body { font-family: Arial; margin: 30px; background: #f4f4f4; }
-    input, button { padding: 10px; font-size: 16px; margin-right: 10px; }
-    canvas { margin-top: 30px; background: white; padding: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background: #f4f4f4;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    canvas {
+      margin-top: 30px;
+      background: #fff;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
@@ -19,7 +31,6 @@
   <canvas id="graficoPressao" width="800" height="400"></canvas>
 
   <script>
-    // 🔐 Substitua com os dados reais do seu Supabase
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
 
@@ -112,7 +123,8 @@
       await carregarDados();
     }
 
-    async function exportarCSV() {
+    // Exportação como função global
+    window.exportarCSV = async function () {
       const { data, error } = await supabaseClient
         .from('pressao')
         .select('*')
@@ -144,7 +156,7 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }
+    };
 
     carregarDados();
   </script>
