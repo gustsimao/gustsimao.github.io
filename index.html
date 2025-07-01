@@ -25,12 +25,13 @@
     <h2>Registrar Pressão Arterial</h2>
     <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
     <button onclick="registrarPressao()">Registrar</button>
-    <button onclick="exportarCSV()">Exportar CSV</button>
+
     <br><br>
     <label for="filtroMes">Filtrar por mês:</label>
     <select id="filtroMes" onchange="carregarDadosFiltrados()">
       <option value="todos">Todos os meses</option>
     </select>
+
     <canvas id="graficoPressao" width="800" height="400"></canvas>
   </div>
 
@@ -52,7 +53,7 @@
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ctx = document.getElementById('graficoPressao').getContext('2d');
     const chart = new Chart(ctx, {
@@ -94,7 +95,7 @@
     let todosOsDados = [];
 
     async function carregarDados() {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('pressao')
         .select('*')
         .order('data', { ascending: true });
@@ -106,38 +107,48 @@
       }
 
       todosOsDados = data;
-      preencherFiltroMes();
+      preencherFiltroMes(data);
       carregarDadosFiltrados();
+
+      // 👇 Mostrar os meses únicos no console
+      const mesesUnicos = [...new Set(data.map(d => {
+        const dataObj = new Date(d.data);
+        return `${dataObj.getFullYear()}-${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
+      }))];
+      console.log("Meses encontrados:", mesesUnicos);
     }
 
-    function preencherFiltroMes() {
-      const select = document.getElementById("filtroMes");
-      const mesesUnicos = [...new Set(todosOsDados.map(d => {
-        const data = new Date(d.data);
-        return `${data.getFullYear()}-${(data.getMonth()+1).toString().padStart(2, '0')}`;
+    function preencherFiltroMes(data) {
+      const select = document.getElementById('filtroMes');
+      select.innerHTML = '<option value="todos">Todos os meses</option>';
+
+      const meses = [...new Set(data.map(d => {
+        const dataObj = new Date(d.data);
+        return `${dataObj.getFullYear()}-${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
       }))];
 
-      select.innerHTML = `<option value="todos">Todos os meses</option>`;
-      mesesUnicos.forEach(m => {
-        const texto = new Date(`${m}-01`).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-        const option = new Option(texto, m);
+      meses.forEach(mes => {
+        const option = document.createElement('option');
+        option.value = mes;
+        option.textContent = mes;
         select.appendChild(option);
       });
     }
 
     function carregarDadosFiltrados() {
-      const mesSelecionado = document.getElementById("filtroMes").value;
+      const mesSelecionado = document.getElementById('filtroMes').value;
 
-      const filtrados = mesSelecionado === "todos" ? todosOsDados :
-        todosOsDados.filter(d => {
-          const data = new Date(d.data);
-          const mesAno = `${data.getFullYear()}-${(data.getMonth()+1).toString().padStart(2, '0')}`;
-          return mesAno === mesSelecionado;
-        });
+      const dadosFiltrados = mesSelecionado === "todos"
+        ? todosOsDados
+        : todosOsDados.filter(d => {
+            const dataObj = new Date(d.data);
+            const mes = `${dataObj.getFullYear()}-${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
+            return mes === mesSelecionado;
+          });
 
-      chart.data.labels = filtrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
-      chart.data.datasets[0].data = filtrados.map(d => d.sistolica);
-      chart.data.datasets[1].data = filtrados.map(d => d.diastolica);
+      chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
+      chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
+      chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
       chart.update();
     }
 
@@ -157,9 +168,11 @@
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('pressao')
-        .insert([{ data: new Date().toISOString(), sistolica, diastolica }]);
+        .insert([
+          { data: new Date().toISOString(), sistolica, diastolica }
+        ]);
 
       if (error) {
         alert('Erro ao salvar');
@@ -171,14 +184,25 @@
       await carregarDados();
     }
 
-    async function exportarCSV() {
-      if (!todosOsDados.length) {
+    window.exportarCSV = async function () {
+      const { data, error } = await supabaseClient
+        .from('pressao')
+        .select('*')
+        .order('data', { ascending: true });
+
+      if (error) {
+        alert('Erro ao buscar dados para exportar');
+        console.error(error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
         alert('Nenhum dado para exportar.');
         return;
       }
 
       let csv = "Data,Sistólica,Diastólica\n";
-      todosOsDados.forEach(d => {
+      data.forEach(d => {
         const dataFormatada = new Date(d.data).toLocaleString('pt-BR');
         csv += `${dataFormatada},${d.sistolica},${d.diastolica}\n`;
       });
@@ -192,8 +216,7 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }
+    };
   </script>
 </body>
 </html>
-
