@@ -26,18 +26,17 @@
     <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
     <button onclick="registrarPressao()">Registrar</button>
 
-    <br><br>
-    <label for="filtroMes">Filtrar por mês:</label>
     <select id="filtroMes" onchange="carregarDadosFiltrados()">
-      <option value="todos">Todos os meses</option>
+      <option value="">Todos os meses</option>
     </select>
+    
+    <button onclick="exportarCSV()">Exportar CSV</button>
 
     <canvas id="graficoPressao" width="800" height="400"></canvas>
   </div>
 
   <script>
     const SENHA_CORRETA = "Qwas";
-
     function verificarSenha() {
       const senha = document.getElementById("senhaInput").value;
       if (senha === SENHA_CORRETA) {
@@ -50,10 +49,10 @@
       }
     }
 
+    // Supabase
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
-
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ctx = document.getElementById('graficoPressao').getContext('2d');
     const chart = new Chart(ctx, {
@@ -92,64 +91,64 @@
       }
     });
 
-    let todosOsDados = [];
-
     async function carregarDados() {
-      const { data, error } = await supabaseClient
-        .from('pressao')
-        .select('*')
-        .order('data', { ascending: true });
-
+      const { data, error } = await supabase.from('pressao').select('*').order('data', { ascending: true });
       if (error) {
         alert('Erro ao carregar dados');
         console.error(error);
         return;
       }
 
-      todosOsDados = data;
       preencherFiltroMes(data);
-      carregarDadosFiltrados();
+      atualizarGrafico(data);
+    }
 
-      // 👇 Mostrar os meses únicos no console
-      const mesesUnicos = [...new Set(data.map(d => {
-        const dataObj = new Date(d.data);
-        return `${dataObj.getFullYear()}-${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
-      }))];
-      console.log("Meses encontrados:", mesesUnicos);
+    function atualizarGrafico(data) {
+      chart.data.labels = data.map(d => new Date(d.data).toLocaleString('pt-BR'));
+      chart.data.datasets[0].data = data.map(d => d.sistolica);
+      chart.data.datasets[1].data = data.map(d => d.diastolica);
+      chart.update();
     }
 
     function preencherFiltroMes(data) {
-      const select = document.getElementById('filtroMes');
-      select.innerHTML = '<option value="todos">Todos os meses</option>';
+      const filtro = document.getElementById("filtroMes");
+      filtro.innerHTML = '<option value="">Todos os meses</option>';
 
       const meses = [...new Set(data.map(d => {
-        const dataObj = new Date(d.data);
-        return `${dataObj.getFullYear()}-${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
+        const dt = new Date(d.data);
+        const ano = dt.toLocaleString('pt-BR', { timeZone: 'UTC', year: 'numeric' });
+        const mes = dt.toLocaleString('pt-BR', { timeZone: 'UTC', month: '2-digit' });
+        return `${ano}-${mes}`;
       }))];
 
-      meses.forEach(mes => {
-        const option = document.createElement('option');
-        option.value = mes;
-        option.textContent = mes;
-        select.appendChild(option);
+      meses.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m;
+        const [ano, mes] = m.split("-");
+        opt.text = `${mes}/${ano}`;
+        filtro.appendChild(opt);
       });
     }
 
-    function carregarDadosFiltrados() {
-      const mesSelecionado = document.getElementById('filtroMes').value;
+    async function carregarDadosFiltrados() {
+      const { data, error } = await supabase.from('pressao').select('*').order('data', { ascending: true });
+      if (error) {
+        alert('Erro ao carregar dados');
+        console.error(error);
+        return;
+      }
 
-      const dadosFiltrados = mesSelecionado === "todos"
-        ? todosOsDados
-        : todosOsDados.filter(d => {
-            const dataObj = new Date(d.data);
-            const mes = `${dataObj.getFullYear()}-${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
-            return mes === mesSelecionado;
-          });
+      const filtro = document.getElementById("filtroMes").value;
+      const filtrados = filtro
+        ? data.filter(d => {
+            const dt = new Date(d.data);
+            const mes = dt.toLocaleString('pt-BR', { timeZone: 'UTC', month: '2-digit' });
+            const ano = dt.toLocaleString('pt-BR', { timeZone: 'UTC', year: 'numeric' });
+            return `${ano}-${mes}` === filtro;
+          })
+        : data;
 
-      chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
-      chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
-      chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
-      chart.update();
+      atualizarGrafico(filtrados);
     }
 
     async function registrarPressao() {
@@ -162,17 +161,14 @@
 
       const sistolica = parseInt(partes[0]);
       const diastolica = parseInt(partes[1]);
-
       if (isNaN(sistolica) || isNaN(diastolica)) {
         alert('Valores inválidos.');
         return;
       }
 
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('pressao')
-        .insert([
-          { data: new Date().toISOString(), sistolica, diastolica }
-        ]);
+        .insert([{ data: new Date().toISOString(), sistolica, diastolica }]);
 
       if (error) {
         alert('Erro ao salvar');
@@ -181,30 +177,21 @@
       }
 
       document.getElementById('pressaoInput').value = '';
-      await carregarDados();
+      carregarDados();
     }
 
-    window.exportarCSV = async function () {
-      const { data, error } = await supabaseClient
-        .from('pressao')
-        .select('*')
-        .order('data', { ascending: true });
-
+    async function exportarCSV() {
+      const { data, error } = await supabase.from('pressao').select('*').order('data', { ascending: true });
       if (error) {
-        alert('Erro ao buscar dados para exportar');
+        alert('Erro ao exportar dados');
         console.error(error);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        alert('Nenhum dado para exportar.');
         return;
       }
 
       let csv = "Data,Sistólica,Diastólica\n";
       data.forEach(d => {
-        const dataFormatada = new Date(d.data).toLocaleString('pt-BR');
-        csv += `${dataFormatada},${d.sistolica},${d.diastolica}\n`;
+        const dt = new Date(d.data).toLocaleString('pt-BR');
+        csv += `${dt},${d.sistolica},${d.diastolica}\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -216,7 +203,7 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    };
+    }
   </script>
 </body>
 </html>
