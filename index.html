@@ -141,9 +141,14 @@
         const data = await res.json();
 
         const mesSelecionado = document.getElementById("mesSelect").value;
-        const dadosFiltrados = mesSelecionado
+        const dadosFiltrados = (mesSelecionado
           ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
-          : data;
+          : data
+        ).map(d => ({
+          ...d,
+          sistolica: Number(d.sistolica),
+          diastolica: Number(d.diastolica)
+        }));
 
         chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
         chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
