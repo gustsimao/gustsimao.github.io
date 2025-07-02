@@ -1,34 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Registro de Pressão Arterial</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monitoramento de Pressão</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    body { font-family: Arial; margin: 30px; background: #f4f4f4; }
-    input, select, button { padding: 10px; font-size: 16px; margin: 5px 10px 5px 0; }
-    canvas, table { margin-top: 30px; background: #fff; padding: 20px; }
-    #loginDiv, #appDiv { margin-top: 20px; }
-    #appDiv { display: none; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-    th { background: #eee; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    #appDiv {
+      display: none;
+      margin-top: 20px;
+    }
+    #graficoPressao {
+      max-width: 100%;
+      margin: 30px auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 30px;
+      background-color: #fff;
+    }
+    table, th, td {
+      border: 1px solid #aaa;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    select, input {
+      padding: 8px;
+      margin: 5px 0;
+    }
+    .btn {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
 
-  <h2>Login</h2>
   <div id="loginDiv">
-    <input type="password" id="senhaInput" placeholder="Digite a senha">
-    <button onclick="verificarSenha()">Entrar</button>
+    <h2>Login</h2>
+    <input type="password" id="senhaInput" placeholder="Digite a senha" />
+    <button class="btn" onclick="verificarSenha()">Entrar</button>
   </div>
 
   <div id="appDiv">
-    <h2>Registrar Pressão Arterial</h2>
-    <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
-    <input type="text" id="obsInput" placeholder="Observações (opcional)">
-    <button onclick="registrarPressao()">Registrar</button>
+    <h2>Monitoramento de Pressão Arterial</h2>
+
+    <label for="pressaoInput">Pressão (ex: 120/80):</label><br />
+    <input type="text" id="pressaoInput" placeholder="Ex: 130/85" /><br />
+
+    <label for="obsInput">Observação:</label><br />
+    <input type="text" id="obsInput" placeholder="Ex: após exercício" /><br />
+
+    <button class="btn" onclick="registrarPressao()">Registrar</button>
+
+    <hr />
 
     <label for="mesSelect">Filtrar por mês:</label>
     <select id="mesSelect" onchange="carregarDados()">
@@ -37,10 +76,10 @@
 
     <canvas id="graficoPressao" width="800" height="400"></canvas>
 
-    <table id="tabelaObs" style="display: none;">
+    <table id="tabelaObs" style="display:none">
       <thead>
         <tr>
-          <th>Data/Hora</th>
+          <th>Data</th>
           <th>Sistólica</th>
           <th>Diastólica</th>
           <th>Observação</th>
@@ -51,13 +90,7 @@
   </div>
 
   <script>
-    function _0xd96e(_0x2c5142,_0xd98b12){const _0x2b7172=_0x2b71();return _0xd96e=function(_0xd96e99,_0x158c33){_0xd96e99=_0xd96e99-0xb4;let _0x5e296b=_0x2b7172[_0xd96e99];return _0x5e296b;},_0xd96e(_0x2c5142,_0xd98b12);}function _0x2b71(){const _0x457311=['createClient','88ymAUpt','919227ACyoEL','280209NbhZeG','1074090UNLiic','128359VLmZXD','4882086hvnntB','4MkeSsI','6443250gRVpUN','30NCDJRj','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk','156890Limknr'];_0x2b71=function(){return _0x457311;};return _0x2b71();}const _0x25804c=_0xd96e;(function(_0x269415,_0x33f4d0){const _0x516f96=_0xd96e,_0x4a0f6a=_0x269415();while(!![]){try{const _0x305a7c=parseInt(_0x516f96(0xba))/0x1+parseInt(_0x516f96(0xbb))/0x2+parseInt(_0x516f96(0xb9))/0x3*(parseInt(_0x516f96(0xbe))/0x4)+parseInt(_0x516f96(0xb6))/0x5*(parseInt(_0x516f96(0xb4))/0x6)+parseInt(_0x516f96(0xbc))/0x7*(parseInt(_0x516f96(0xb8))/0x8)+-parseInt(_0x516f96(0xbd))/0x9+-parseInt(_0x516f96(0xbf))/0xa;if(_0x305a7c===_0x33f4d0)break;else _0x4a0f6a['push'](_0x4a0f6a['shift']());}catch(_0x4e004e){_0x4a0f6a['push'](_0x4a0f6a['shift']());}}}(_0x2b71,0x48239));const SENHA_CORRETA='Qwas',SUPABASE_URL='https://bxvlcpnepzumkuhmvtgt.supabase.co',SUPABASE_ANON_KEY=_0x25804c(0xb5),supabaseClient=supabase[_0x25804c(0xb7)](SUPABASE_URL,SUPABASE_ANON_KEY);
-   // const SENHA_CORRETA = "Qwas";
-
-   // const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
-   // const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
-   // const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    const API_URL = "https://meu-backend-4840.onrender.com";
     const ctx = document.getElementById('graficoPressao').getContext('2d');
     let observacoes = [];
 
@@ -66,18 +99,8 @@
       data: {
         labels: [],
         datasets: [
-          {
-            label: 'Sistólica',
-            borderColor: 'red',
-            data: [],
-            tension: 0.3
-          },
-          {
-            label: 'Diastólica',
-            borderColor: 'green',
-            data: [],
-            tension: 0.3
-          }
+          { label: 'Sistólica', borderColor: 'red', data: [], tension: 0.3 },
+          { label: 'Diastólica', borderColor: 'green', data: [], tension: 0.3 }
         ]
       },
       options: {
@@ -94,19 +117,15 @@
           }
         },
         scales: {
-          y: {
-            title: { display: true, text: 'Pressão (mmHg)' }
-          },
-          x: {
-            title: { display: true, text: 'Data/Hora' }
-          }
+          y: { title: { display: true, text: 'Pressão (mmHg)' } },
+          x: { title: { display: true, text: 'Data/Hora' } }
         }
       }
     });
 
     function verificarSenha() {
       const senha = document.getElementById("senhaInput").value;
-      if (senha === SENHA_CORRETA) {
+      if (senha === "Qwas") {
         document.getElementById("loginDiv").style.display = "none";
         document.getElementById("appDiv").style.display = "block";
         document.getElementById("graficoPressao").style.display = "block";
@@ -117,30 +136,27 @@
     }
 
     async function carregarDados() {
-      const { data, error } = await supabaseClient
-        .from('pressao')
-        .select('*')
-        .order('data', { ascending: true });
+      try {
+        const res = await fetch(`${API_URL}/dados`);
+        const data = await res.json();
 
-      if (error) {
-        alert('Erro ao carregar dados');
-        console.error(error);
-        return;
+        const mesSelecionado = document.getElementById("mesSelect").value;
+        const dadosFiltrados = mesSelecionado
+          ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
+          : data;
+
+        chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
+        chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
+        chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
+        observacoes = dadosFiltrados.map(d => d.observacao || '');
+        chart.update();
+
+        preencherSelectMes(data);
+        atualizarTabela(dadosFiltrados);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        alert('Erro ao carregar dados.');
       }
-
-      const mesSelecionado = document.getElementById("mesSelect").value;
-      const dadosFiltrados = mesSelecionado
-        ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
-        : data;
-
-      chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
-      chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
-      chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
-      observacoes = dadosFiltrados.map(d => d.observacao || '');
-      chart.update();
-
-      preencherSelectMes(data);
-      atualizarTabela(dadosFiltrados);
     }
 
     function preencherSelectMes(dados) {
@@ -157,7 +173,6 @@
       const tabela = document.getElementById("tabelaObs");
       const tbody = tabela.querySelector("tbody");
       tbody.innerHTML = '';
-
       dados.forEach(d => {
         const linha = document.createElement("tr");
         linha.innerHTML = `
@@ -168,7 +183,6 @@
         `;
         tbody.appendChild(linha);
       });
-
       tabela.style.display = dados.length ? 'table' : 'none';
     }
 
@@ -190,19 +204,23 @@
         return;
       }
 
-      const { error } = await supabaseClient
-        .from('pressao')
-        .insert([{ data: new Date().toISOString(), sistolica, diastolica, observacao: obs }]);
+      try {
+        const res = await fetch(`${API_URL}/registrar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sistolica, diastolica, observacao: obs })
+        });
 
-      if (error) {
-        alert('Erro ao salvar');
+        const resultado = await res.json();
+        if (!res.ok) throw new Error(resultado.erro || 'Erro ao registrar');
+
+        document.getElementById('pressaoInput').value = '';
+        document.getElementById('obsInput').value = '';
+        await carregarDados();
+      } catch (error) {
         console.error(error);
-        return;
+        alert('Erro ao salvar');
       }
-
-      document.getElementById('pressaoInput').value = '';
-      document.getElementById('obsInput').value = '';
-      await carregarDados();
     }
   </script>
 </body>
