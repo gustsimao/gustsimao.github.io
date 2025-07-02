@@ -38,9 +38,9 @@
   <script>
     const SENHA_CORRETA = "Qwas";
 
-    const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    _URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
+    _ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ctx = document.getElementById('graficoPressao').getContext('2d');
     const chart = new Chart(ctx, {
