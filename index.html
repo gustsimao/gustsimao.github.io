@@ -15,9 +15,14 @@
       display: none;
       margin-top: 20px;
     }
-    #graficoPressao {
-      max-width: 100%;
+    #graficoContainer {
+      width: 100%;
+      max-width: 900px;
       margin: 30px auto;
+    }
+    canvas {
+      width: 100% !important;
+      height: 400px !important;
     }
     table {
       border-collapse: collapse;
@@ -74,7 +79,9 @@
       <option value="">Todos os meses</option>
     </select>
 
-    <canvas id="graficoPressao" width="800" height="400"></canvas>
+    <div id="graficoContainer">
+      <canvas id="graficoPressao"></canvas>
+    </div>
 
     <table id="tabelaObs" style="display:none">
       <thead>
@@ -91,48 +98,55 @@
 
   <script>
     const API_URL = "https://meu-backend-4840.onrender.com";
-    const ctx = document.getElementById('graficoPressao').getContext('2d');
     let observacoes = [];
-
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [
-          { label: 'Sistólica', borderColor: 'red', data: [], tension: 0.3 },
-          { label: 'Diastólica', borderColor: 'green', data: [], tension: 0.3 }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          tooltip: {
-            callbacks: {
-              afterBody: (tooltipItems) => {
-                const index = tooltipItems[0].dataIndex;
-                const obs = observacoes[index];
-                return obs ? 'Observação: ' + obs : '';
-              }
-            }
-          }
-        },
-        scales: {
-          y: { title: { display: true, text: 'Pressão (mmHg)' } },
-          x: { title: { display: true, text: 'Data/Hora' } }
-        }
-      }
-    });
+    let chart;
 
     function verificarSenha() {
       const senha = document.getElementById("senhaInput").value;
       if (senha === "Qwas") {
         document.getElementById("loginDiv").style.display = "none";
         document.getElementById("appDiv").style.display = "block";
-        document.getElementById("graficoPressao").style.display = "block";
-        carregarDados();
+        
+        setTimeout(() => {
+          inicializarGrafico();
+          carregarDados();
+        }, 100);
       } else {
         alert("Senha incorreta!");
       }
+    }
+
+    function inicializarGrafico() {
+      const ctx = document.getElementById('graficoPressao').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            { label: 'Sistólica', borderColor: 'red', data: [], tension: 0.3 },
+            { label: 'Diastólica', borderColor: 'green', data: [], tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                afterBody: (tooltipItems) => {
+                  const index = tooltipItems[0].dataIndex;
+                  const obs = observacoes[index];
+                  return obs ? 'Observação: ' + obs : '';
+                }
+              }
+            }
+          },
+          scales: {
+            y: { title: { display: true, text: 'Pressão (mmHg)' } },
+            x: { title: { display: true, text: 'Data/Hora' } }
+          }
+        }
+      });
     }
 
     async function carregarDados() {
@@ -141,14 +155,9 @@
         const data = await res.json();
 
         const mesSelecionado = document.getElementById("mesSelect").value;
-        const dadosFiltrados = (mesSelecionado
+        const dadosFiltrados = mesSelecionado
           ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
-          : data
-        ).map(d => ({
-          ...d,
-          sistolica: Number(d.sistolica),
-          diastolica: Number(d.diastolica)
-        }));
+          : data;
 
         chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
         chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
