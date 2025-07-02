@@ -38,8 +38,9 @@
   <script>
     const SENHA_CORRETA = "Qwas";
 
-    _URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
-    _ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+    // 🔑 Informações do Supabase
+    const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ctx = document.getElementById('graficoPressao').getContext('2d');
@@ -112,7 +113,6 @@
       }
 
       const mesSelecionado = document.getElementById("mesSelect").value;
-
       const dadosFiltrados = mesSelecionado
         ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
         : data;
@@ -154,7 +154,7 @@
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('pressao')
         .insert([{ data: new Date().toISOString(), sistolica, diastolica, observacao: obs }]);
 
