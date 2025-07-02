@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitoramento de Pressão</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -97,28 +97,26 @@
   </div>
 
   <script>
-    const API_URL = "https://meu-backend-4840.onrender.com";
+    const API_URL = "https://meu-backend-4840.onrender.com"; // Pode ser configurado via .env no backend
+    const SENHA_HASH = "Qwas"; // Mova isso para o backend se quiser esconder completamente
+
     let observacoes = [];
     let chart;
 
-    async function verificarSenha() {
-  const senha = document.getElementById("senhaInput").value;
+    function verificarSenha() {
+      const senha = document.getElementById("senhaInput").value;
+      if (senha === SENHA_HASH) {
+        document.getElementById("loginDiv").style.display = "none";
+        document.getElementById("appDiv").style.display = "block";
 
-  const res = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ senha })
-  });
-
-  if (res.ok) {
-    document.getElementById("loginDiv").style.display = "none";
-    document.getElementById("appDiv").style.display = "block";
-    document.getElementById("graficoPressao").style.display = "block";
-    carregarDados();
-  } else {
-    alert("Senha incorreta!");
-  }
-}
+        setTimeout(() => {
+          inicializarGrafico();
+          carregarDados();
+        }, 100);
+      } else {
+        alert("Senha incorreta!");
+      }
+    }
 
     function inicializarGrafico() {
       const ctx = document.getElementById('graficoPressao').getContext('2d');
@@ -154,29 +152,28 @@
     }
 
     async function carregarDados() {
-  try {
-    const res = await fetch(`${API_URL}/dados`);
-    if (!res.ok) throw new Error("Erro na resposta da API");
+      try {
+        const res = await fetch(`${API_URL}/dados`);
+        const data = await res.json();
 
-    const dados = await res.json(); // Aqui NÃO usamos .data
-    const mesSelecionado = document.getElementById("mesSelect").value;
-    const dadosFiltrados = mesSelecionado
-      ? dados.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
-      : dados;
+        const mesSelecionado = document.getElementById("mesSelect").value;
+        const dadosFiltrados = mesSelecionado
+          ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
+          : data;
 
-    chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
-    chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
-    chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
-    observacoes = dadosFiltrados.map(d => d.observacao || '');
-    chart.update();
+        chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
+        chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
+        chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
+        observacoes = dadosFiltrados.map(d => d.observacao || '');
+        chart.update();
 
-    preencherSelectMes(dados);
-    atualizarTabela(dadosFiltrados);
-  } catch (error) {
-    console.error('Erro ao carregar dados:', error);
-    alert('Erro ao carregar dados: ' + error.message);
-  }
-}
+        preencherSelectMes(data);
+        atualizarTabela(dadosFiltrados);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        alert('Erro ao carregar dados.');
+      }
+    }
 
     function preencherSelectMes(dados) {
       const select = document.getElementById("mesSelect");
@@ -241,6 +238,10 @@
         alert('Erro ao salvar');
       }
     }
+  </script>
+</body>
+</html>
+
   </script>
 </body>
 </html>
