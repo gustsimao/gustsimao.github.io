@@ -166,7 +166,7 @@
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('pressao')
         .insert([{ data: new Date().toISOString(), sistolica, diastolica }]);
 
