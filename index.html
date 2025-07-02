@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: Arial; margin: 30px; background: #f4f4f4; }
-    input, button, select { padding: 10px; font-size: 16px; margin: 5px 10px 5px 0; }
+    input, select, button { padding: 10px; font-size: 16px; margin: 5px 10px 5px 0; }
     canvas { margin-top: 30px; background: #fff; padding: 20px; display: none; }
     #loginDiv, #appDiv { margin-top: 20px; }
     #appDiv { display: none; }
@@ -24,19 +24,69 @@
   <div id="appDiv">
     <h2>Registrar Pressão Arterial</h2>
     <input type="text" id="pressaoInput" placeholder="Ex: 130/80">
+    <input type="text" id="obsInput" placeholder="Observações (opcional)">
     <button onclick="registrarPressao()">Registrar</button>
 
-    <select id="filtroMes" onchange="carregarDadosFiltrados()">
+    <label for="mesSelect">Filtrar por mês:</label>
+    <select id="mesSelect" onchange="carregarDados()">
       <option value="">Todos os meses</option>
     </select>
-    
-    <button onclick="exportarCSV()">Exportar CSV</button>
 
     <canvas id="graficoPressao" width="800" height="400"></canvas>
   </div>
 
   <script>
     const SENHA_CORRETA = "Qwas";
+
+    const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const ctx = document.getElementById('graficoPressao').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Sistólica',
+            borderColor: 'red',
+            data: [],
+            tension: 0.3
+          },
+          {
+            label: 'Diastólica',
+            borderColor: 'green',
+            data: [],
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              afterBody: (tooltipItems) => {
+                const index = tooltipItems[0].dataIndex;
+                return 'Obs: ' + observacoes[index];
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: { display: true, text: 'Pressão (mmHg)' }
+          },
+          x: {
+            title: { display: true, text: 'Data/Hora' }
+          }
+        }
+      }
+    });
+
+    let observacoes = [];
+
     function verificarSenha() {
       const senha = document.getElementById("senhaInput").value;
       if (senha === SENHA_CORRETA) {
@@ -49,111 +99,48 @@
       }
     }
 
-    // Supabase
-    const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const ctx = document.getElementById('graficoPressao').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: 'Sistólica (vermelho)',
-            borderColor: 'red',
-            backgroundColor: 'rgba(255,0,0,0.1)',
-            data: [],
-            tension: 0.3
-          },
-          {
-            label: 'Diastólica (verde)',
-            borderColor: 'green',
-            backgroundColor: 'rgba(0,255,0,0.1)',
-            data: [],
-            tension: 0.3
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            title: { display: true, text: 'Pressão (mmHg)' },
-            suggestedMin: 60,
-            suggestedMax: 180
-          },
-          x: {
-            title: { display: true, text: 'Data/Hora' }
-          }
-        }
-      }
-    });
-
     async function carregarDados() {
-      const { data, error } = await supabaseClient.from('pressao').select('*').order('data', { ascending: true });
+      const { data, error } = await supabase
+        .from('pressao')
+        .select('*')
+        .order('data', { ascending: true });
+
       if (error) {
         alert('Erro ao carregar dados');
         console.error(error);
         return;
       }
 
-      preencherFiltroMes(data);
-      atualizarGrafico(data);
-    }
+      const mesSelecionado = document.getElementById("mesSelect").value;
 
-    function atualizarGrafico(data) {
-      chart.data.labels = data.map(d => new Date(d.data).toLocaleString('pt-BR'));
-      chart.data.datasets[0].data = data.map(d => d.sistolica);
-      chart.data.datasets[1].data = data.map(d => d.diastolica);
-      chart.update();
-    }
-
-    function preencherFiltroMes(data) {
-      const filtro = document.getElementById("filtroMes");
-      filtro.innerHTML = '<option value="">Todos os meses</option>';
-
-      const meses = [...new Set(data.map(d => {
-        const dt = new Date(d.data);
-        const ano = dt.toLocaleString('pt-BR', { timeZone: 'UTC', year: 'numeric' });
-        const mes = dt.toLocaleString('pt-BR', { timeZone: 'UTC', month: '2-digit' });
-        return `${ano}-${mes}`;
-      }))];
-
-      meses.forEach(m => {
-        const opt = document.createElement("option");
-        opt.value = m;
-        const [ano, mes] = m.split("-");
-        opt.text = `${mes}/${ano}`;
-        filtro.appendChild(opt);
-      });
-    }
-
-    async function carregarDadosFiltrados() {
-      const { data, error } = await supabaseClient.from('pressao').select('*').order('data', { ascending: true });
-      if (error) {
-        alert('Erro ao carregar dados');
-        console.error(error);
-        return;
-      }
-
-      const filtro = document.getElementById("filtroMes").value;
-      const filtrados = filtro
-        ? data.filter(d => {
-            const dt = new Date(d.data);
-            const mes = dt.toLocaleString('pt-BR', { timeZone: 'UTC', month: '2-digit' });
-            const ano = dt.toLocaleString('pt-BR', { timeZone: 'UTC', year: 'numeric' });
-            return `${ano}-${mes}` === filtro;
-          })
+      const dadosFiltrados = mesSelecionado
+        ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
         : data;
 
-      atualizarGrafico(filtrados);
+      chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
+      chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
+      chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
+      observacoes = dadosFiltrados.map(d => d.observacao || '');
+      chart.update();
+
+      preencherSelectMes(data);
+    }
+
+    function preencherSelectMes(dados) {
+      const select = document.getElementById("mesSelect");
+      const meses = [...new Set(dados.map(d => new Date(d.data).getMonth()))];
+      select.innerHTML = '<option value="">Todos os meses</option>';
+      meses.sort().forEach(mes => {
+        const nome = new Date(2024, mes, 1).toLocaleString('pt-BR', { month: 'long' });
+        select.innerHTML += `<option value="${mes + 1}">${nome}</option>`;
+      });
     }
 
     async function registrarPressao() {
       const input = document.getElementById('pressaoInput').value.trim();
+      const obs = document.getElementById('obsInput').value.trim();
       const partes = input.split('/');
+
       if (partes.length !== 2) {
         alert('Formato inválido. Use 130/80.');
         return;
@@ -161,14 +148,15 @@
 
       const sistolica = parseInt(partes[0]);
       const diastolica = parseInt(partes[1]);
+
       if (isNaN(sistolica) || isNaN(diastolica)) {
         alert('Valores inválidos.');
         return;
       }
 
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('pressao')
-        .insert([{ data: new Date().toISOString(), sistolica, diastolica }]);
+        .insert([{ data: new Date().toISOString(), sistolica, diastolica, observacao: obs }]);
 
       if (error) {
         alert('Erro ao salvar');
@@ -177,32 +165,8 @@
       }
 
       document.getElementById('pressaoInput').value = '';
-      carregarDados();
-    }
-
-    async function exportarCSV() {
-      const { data, error } = await supabaseClient.from('pressao').select('*').order('data', { ascending: true });
-      if (error) {
-        alert('Erro ao exportar dados');
-        console.error(error);
-        return;
-      }
-
-      let csv = "Data,Sistólica,Diastólica\n";
-      data.forEach(d => {
-        const dt = new Date(d.data).toLocaleString('pt-BR');
-        csv += `${dt},${d.sistolica},${d.diastolica}\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", "pressao_arterial.csv");
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      document.getElementById('obsInput').value = '';
+      await carregarDados();
     }
   </script>
 </body>
