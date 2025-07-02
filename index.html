@@ -8,9 +8,12 @@
   <style>
     body { font-family: Arial; margin: 30px; background: #f4f4f4; }
     input, select, button { padding: 10px; font-size: 16px; margin: 5px 10px 5px 0; }
-    canvas { margin-top: 30px; background: #fff; padding: 20px; display: none; }
+    canvas, table { margin-top: 30px; background: #fff; padding: 20px; }
     #loginDiv, #appDiv { margin-top: 20px; }
     #appDiv { display: none; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background: #eee; }
   </style>
 </head>
 <body>
@@ -33,17 +36,30 @@
     </select>
 
     <canvas id="graficoPressao" width="800" height="400"></canvas>
+
+    <table id="tabelaObs" style="display: none;">
+      <thead>
+        <tr>
+          <th>Data/Hora</th>
+          <th>Sistólica</th>
+          <th>Diastólica</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <script>
     const SENHA_CORRETA = "Qwas";
 
-    // 🔑 Informações do Supabase
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ctx = document.getElementById('graficoPressao').getContext('2d');
+    let observacoes = [];
+
     const chart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -70,7 +86,8 @@
             callbacks: {
               afterBody: (tooltipItems) => {
                 const index = tooltipItems[0].dataIndex;
-                return 'Obs: ' + observacoes[index];
+                const obs = observacoes[index];
+                return obs ? 'Observação: ' + obs : '';
               }
             }
           }
@@ -85,8 +102,6 @@
         }
       }
     });
-
-    let observacoes = [];
 
     function verificarSenha() {
       const senha = document.getElementById("senhaInput").value;
@@ -124,6 +139,7 @@
       chart.update();
 
       preencherSelectMes(data);
+      atualizarTabela(dadosFiltrados);
     }
 
     function preencherSelectMes(dados) {
@@ -134,6 +150,25 @@
         const nome = new Date(2024, mes, 1).toLocaleString('pt-BR', { month: 'long' });
         select.innerHTML += `<option value="${mes + 1}">${nome}</option>`;
       });
+    }
+
+    function atualizarTabela(dados) {
+      const tabela = document.getElementById("tabelaObs");
+      const tbody = tabela.querySelector("tbody");
+      tbody.innerHTML = '';
+
+      dados.forEach(d => {
+        const linha = document.createElement("tr");
+        linha.innerHTML = `
+          <td>${new Date(d.data).toLocaleString('pt-BR')}</td>
+          <td>${d.sistolica}</td>
+          <td>${d.diastolica}</td>
+          <td>${d.observacao || ''}</td>
+        `;
+        tbody.appendChild(linha);
+      });
+
+      tabela.style.display = dados.length ? 'table' : 'none';
     }
 
     async function registrarPressao() {
