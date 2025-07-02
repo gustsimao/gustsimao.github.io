@@ -52,7 +52,7 @@
     // Supabase
     const SUPABASE_URL = "https://bxvlcpnepzumkuhmvtgt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dmxjcG5lcHp1bWt1aG12dGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNDgyNDUsImV4cCI6MjA2NTkyNDI0NX0.gVX6ovXEwUPZp2HFQh7W0xSwwfxL-uOA09146v_3Sfk";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ctx = document.getElementById('graficoPressao').getContext('2d');
     const chart = new Chart(ctx, {
@@ -92,7 +92,7 @@
     });
 
     async function carregarDados() {
-      const { data, error } = await supabase.from('pressao').select('*').order('data', { ascending: true });
+      const { data, error } = await supabaseClient.from('pressao').select('*').order('data', { ascending: true });
       if (error) {
         alert('Erro ao carregar dados');
         console.error(error);
@@ -131,7 +131,7 @@
     }
 
     async function carregarDadosFiltrados() {
-      const { data, error } = await supabase.from('pressao').select('*').order('data', { ascending: true });
+      const { data, error } = await supabaseClient.from('pressao').select('*').order('data', { ascending: true });
       if (error) {
         alert('Erro ao carregar dados');
         console.error(error);
@@ -181,7 +181,7 @@
     }
 
     async function exportarCSV() {
-      const { data, error } = await supabase.from('pressao').select('*').order('data', { ascending: true });
+      const { data, error } = await supabaseClient.from('pressao').select('*').order('data', { ascending: true });
       if (error) {
         alert('Erro ao exportar dados');
         console.error(error);
