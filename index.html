@@ -154,28 +154,29 @@
     }
 
     async function carregarDados() {
-      try {
-        const res = await fetch(`${API_URL}/dados`);
-        const data = await res.json();
+  try {
+    const res = await fetch(`${API_URL}/dados`);
+    if (!res.ok) throw new Error("Erro na resposta da API");
 
-        const mesSelecionado = document.getElementById("mesSelect").value;
-        const dadosFiltrados = mesSelecionado
-          ? data.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
-          : data;
+    const dados = await res.json(); // Aqui NÃO usamos .data
+    const mesSelecionado = document.getElementById("mesSelect").value;
+    const dadosFiltrados = mesSelecionado
+      ? dados.filter(d => new Date(d.data).getMonth() + 1 == mesSelecionado)
+      : dados;
 
-        chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
-        chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
-        chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
-        observacoes = dadosFiltrados.map(d => d.observacao || '');
-        chart.update();
+    chart.data.labels = dadosFiltrados.map(d => new Date(d.data).toLocaleString('pt-BR'));
+    chart.data.datasets[0].data = dadosFiltrados.map(d => d.sistolica);
+    chart.data.datasets[1].data = dadosFiltrados.map(d => d.diastolica);
+    observacoes = dadosFiltrados.map(d => d.observacao || '');
+    chart.update();
 
-        preencherSelectMes(data);
-        atualizarTabela(dadosFiltrados);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        alert('Erro ao carregar dados.');
-      }
-    }
+    preencherSelectMes(dados);
+    atualizarTabela(dadosFiltrados);
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
+    alert('Erro ao carregar dados: ' + error.message);
+  }
+}
 
     function preencherSelectMes(dados) {
       const select = document.getElementById("mesSelect");
